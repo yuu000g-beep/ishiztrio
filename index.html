@@ -2,9 +2,8 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <!-- スマホでの拡大ズレ・勝手なズームを防止 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Otrio (オートリオ) - スマホ最適化版</title>
+  <title>Ishiztrio (イシズトリオ)</title>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
   <style>
@@ -50,8 +49,8 @@
       flex-direction: column;
       align-items: center;
       justify-content: space-between;
-      padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
-      overflow: hidden; /* スマホで縦スクロールが起きないように固定 */
+      padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
+      overflow: hidden;
     }
 
     .app-container {
@@ -70,11 +69,11 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
 
     .title-area h1 {
-      font-size: 1.25rem;
+      font-size: 1.2rem;
       font-weight: 900;
       letter-spacing: 1.5px;
       background: linear-gradient(135deg, #05d9e8, #ff2a6d);
@@ -84,7 +83,7 @@
 
     .mode-select {
       display: flex;
-      gap: 2px;
+      gap: 3px;
       background: #192033;
       padding: 2px;
       border-radius: 8px;
@@ -95,8 +94,8 @@
       background: transparent;
       border: none;
       color: var(--text-sub);
-      padding: 4px 6px;
-      font-size: 0.7rem;
+      padding: 3px 8px;
+      font-size: 0.72rem;
       font-weight: 800;
       border-radius: 6px;
       cursor: pointer;
@@ -117,19 +116,19 @@
       background: #192033;
       border: 1px solid #2a3454;
       color: var(--text-main);
-      padding: 4px 10px;
+      padding: 3px 8px;
       border-radius: 8px;
       cursor: pointer;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-weight: 700;
     }
 
     /* プレイヤー状況バー */
     .players-bar {
       display: grid;
-      gap: 6px;
+      gap: 5px;
       width: 100%;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
     .player-card {
@@ -139,7 +138,12 @@
       padding: 4px 2px;
       text-align: center;
       transition: all 0.2s ease;
-      opacity: 0.4;
+      opacity: 0.45;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
     }
 
     .player-card.active {
@@ -153,17 +157,32 @@
     .player-card.p3.active { border-color: var(--p3-color); box-shadow: 0 0 10px var(--p3-glow); background: rgba(255, 184, 0, 0.12); }
 
     .p-name {
-      font-size: 0.74rem;
+      font-size: 0.72rem;
       font-weight: 900;
-      margin-bottom: 1px;
     }
     .p0 .p-name { color: var(--p0-color); }
     .p1 .p-name { color: var(--p1-color); }
     .p2 .p-name { color: var(--p2-color); }
     .p3 .p-name { color: var(--p3-color); }
 
+    .type-toggle-btn {
+      background: #1a2236;
+      border: 1px solid #36446b;
+      color: #cfd9ed;
+      font-size: 0.6rem;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .type-toggle-btn.is-bot {
+      background: rgba(5, 217, 232, 0.2);
+      border-color: #05d9e8;
+      color: #6ef1fc;
+    }
+
     .p-count {
-      font-size: 0.65rem;
+      font-size: 0.64rem;
       font-weight: 600;
       color: #b5c3d8;
     }
@@ -173,18 +192,18 @@
       width: 100%;
       background: #14192b;
       border: 1px solid #283354;
-      padding: 6px 8px;
+      padding: 5px 8px;
       border-radius: 8px;
       font-size: 0.74rem;
       font-weight: 600;
       text-align: center;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
       color: #b7c7e6;
-      min-height: 32px;
+      min-height: 30px;
       display: flex;
       align-items: center;
       justify-content: center;
-      line-height: 1.25;
+      line-height: 1.2;
     }
 
     .instruction-bar.relocating {
@@ -211,10 +230,10 @@
       color: #ff80a4;
     }
 
-    /* メイン盤面（スマホの画面幅・高さに自動フィット） */
+    /* 盤面 */
     .board-container {
       width: 100%;
-      max-width: 350px;
+      max-width: 345px;
       aspect-ratio: 1;
       background: linear-gradient(145deg, var(--board-outer), #101420);
       border: 2px solid #2f3a5e;
@@ -225,7 +244,7 @@
       grid-template-columns: repeat(3, 1fr);
       grid-template-rows: repeat(3, 1fr);
       gap: 6px;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       position: relative;
     }
 
@@ -268,7 +287,7 @@
     .slot-groove.medium { width: 56%; height: 56%; }
     .slot-groove.small { width: 28%; height: 28%; }
 
-    /* リング（スマホでも指で押しやすい太さ） */
+    /* リング */
     .ring {
       position: absolute;
       border-radius: 50%;
@@ -342,24 +361,24 @@
       100% { filter: brightness(2) drop-shadow(0 0 16px currentColor); transform: scale(1.15); }
     }
 
-    /* 手持ちトレイ（コンパクト化） */
+    /* 手持ちトレイ */
     .tray-container {
       width: 100%;
-      max-width: 350px;
+      max-width: 345px;
       background: #151929;
       border: 1.5px solid #2a3454;
       border-radius: 14px;
-      padding: 8px 10px;
+      padding: 6px 10px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 5px;
     }
 
     .tray-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-weight: 700;
       color: #9cb0ce;
     }
@@ -378,7 +397,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
       cursor: pointer;
       position: relative;
       transition: all 0.15s ease;
@@ -405,16 +424,16 @@
       top: -6px;
       background: #ffb800;
       color: #000;
-      font-size: 0.58rem;
+      font-size: 0.56rem;
       font-weight: 900;
-      padding: 1px 6px;
-      border-radius: 5px;
+      padding: 1px 5px;
+      border-radius: 4px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
 
     .piece-icon-wrap {
-      width: 40px;
-      height: 40px;
+      width: 38px;
+      height: 38px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -489,13 +508,12 @@
   <div class="app-container">
     <header>
       <div class="title-area">
-        <h1>OTRIO</h1>
+        <h1>ISHIZTRIO</h1>
       </div>
       <div class="mode-select">
-        <button class="mode-btn active" data-mode="bot" onclick="setGameMode('bot')">Bot戦</button>
-        <button class="mode-btn" data-mode="2" onclick="setGameMode(2)">2人</button>
-        <button class="mode-btn" data-mode="3" onclick="setGameMode(3)">3人</button>
-        <button class="mode-btn" data-mode="4" onclick="setGameMode(4)">4人</button>
+        <button class="mode-btn active" data-count="2" onclick="setPlayerCount(2)">2人</button>
+        <button class="mode-btn" data-count="3" onclick="setPlayerCount(3)">3人</button>
+        <button class="mode-btn" data-count="4" onclick="setPlayerCount(4)">4人</button>
       </div>
       <div class="header-actions">
         <button class="icon-btn" onclick="resetGame()">リセット</button>
@@ -521,7 +539,7 @@
 
   <div class="modal-overlay" id="winModal">
     <div class="modal-card">
-      <div class="modal-title" id="winTitle">OTRIO！</div>
+      <div class="modal-title" id="winTitle">ISHIZTRIO！</div>
       <div class="modal-desc" id="winReason">勝利条件達成！</div>
       <button class="btn-main" onclick="resetGame(); closeModal();">もう一度遊ぶ</button>
     </div>
@@ -530,9 +548,16 @@
   <script>
     const SIZES = ['small', 'medium', 'large'];
     const SIZE_NAMES = { small: '小', medium: '中', large: '大' };
+    const PLAYER_DEFAULTS = [
+      { id: 0, name: '赤 (P1)', color: '#ff2a6d', isBot: false },
+      { id: 1, name: '青 (P2)', color: '#05d9e8', isBot: true },
+      { id: 2, name: '緑 (P3)', color: '#00ff87', isBot: true },
+      { id: 3, name: '黄 (P4)', color: '#ffb800', isBot: true }
+    ];
 
-    let isBotMode = true;
     let playerCount = 2;
+    let players = JSON.parse(JSON.stringify(PLAYER_DEFAULTS));
+
     let turn = 0;
     let selectedSize = null;
     let relocatingPiece = null;
@@ -542,19 +567,6 @@
 
     let board = [];
     let inventory = [];
-
-    function getPlayerInfo(idx) {
-      if (isBotMode && idx === 1) {
-        return { id: 1, name: 'Bot (青)', color: '#05d9e8' };
-      }
-      const list = [
-        { id: 0, name: '赤 (P1)', color: '#ff2a6d' },
-        { id: 1, name: '青 (P2)', color: '#05d9e8' },
-        { id: 2, name: '緑 (P3)', color: '#00ff87' },
-        { id: 3, name: '黄 (P4)', color: '#ffb800' }
-      ];
-      return list[idx];
-    }
 
     let audioStarted = false;
     let synth = null;
@@ -612,23 +624,29 @@
       renderPlayersBar();
       renderTray();
       updateInstruction();
+
+      if (players[turn].isBot) {
+        triggerBotMove();
+      }
     }
 
-    function setGameMode(mode) {
-      if (mode === 'bot') {
-        isBotMode = true;
-        playerCount = 2;
-      } else {
-        isBotMode = false;
-        playerCount = parseInt(mode);
-      }
-
+    function setPlayerCount(count) {
+      playerCount = count;
       document.querySelectorAll('.mode-btn').forEach(btn => {
-        const bMode = btn.dataset.mode;
-        btn.classList.toggle('active', (isBotMode && bMode === 'bot') || (!isBotMode && bMode == playerCount));
+        btn.classList.toggle('active', parseInt(btn.dataset.count) === count);
       });
-
       resetGame();
+    }
+
+    function togglePlayerType(idx, e) {
+      e.stopPropagation();
+      players[idx].isBot = !players[idx].isBot;
+      renderPlayersBar();
+      updateInstruction();
+
+      if (!gameOver && turn === idx && players[idx].isBot && !isBotThinking) {
+        triggerBotMove();
+      }
     }
 
     function resetGame() {
@@ -652,7 +670,7 @@
       container.style.gridTemplateColumns = `repeat(${playerCount}, 1fr)`;
 
       for (let i = 0; i < playerCount; i++) {
-        const p = getPlayerInfo(i);
+        const p = players[i];
         const card = document.createElement('div');
         card.className = `player-card p${i} ${i === turn ? 'active' : ''}`;
         
@@ -660,7 +678,10 @@
 
         card.innerHTML = `
           <div class="p-name">${p.name}</div>
-          <div class="p-count">手札: ${totalRemaining}個</div>
+          <button class="type-toggle-btn ${p.isBot ? 'is-bot' : ''}" onclick="togglePlayerType(${i}, event)">
+            ${p.isBot ? '🤖 Bot' : '👤 人間'}
+          </button>
+          <div class="p-count">残: ${totalRemaining}</div>
         `;
         container.appendChild(card);
       }
@@ -670,8 +691,8 @@
       const boardEl = document.getElementById('board');
       boardEl.innerHTML = '';
 
-      const isHumanTurn = !(isBotMode && turn === 1);
-      const isExhaustedMode = isHumanTurn && selectedSize && (inventory[turn][selectedSize] === 0) && !relocatingPiece;
+      const isCurrentHuman = !players[turn].isBot;
+      const isExhaustedMode = isCurrentHuman && selectedSize && (inventory[turn][selectedSize] === 0) && !relocatingPiece;
 
       for (let r = 0; r < 3; r++) {
         for (let c = 0; c < 3; c++) {
@@ -680,7 +701,7 @@
           cell.dataset.row = r;
           cell.dataset.col = c;
 
-          if (isHumanTurn && relocatingPiece && board[r][c][relocatingPiece.size] === null) {
+          if (isCurrentHuman && relocatingPiece && board[r][c][relocatingPiece.size] === null) {
             cell.classList.add('valid-target');
           }
 
@@ -711,7 +732,7 @@
 
               ring.onclick = (e) => {
                 e.stopPropagation();
-                if (isHumanTurn && !isBotThinking) {
+                if (isCurrentHuman && !isBotThinking) {
                   handleRingClick(r, c, size);
                 }
               };
@@ -721,7 +742,7 @@
           });
 
           cell.onclick = (e) => {
-            if (isHumanTurn && !isBotThinking) {
+            if (isCurrentHuman && !isBotThinking) {
               handleCellClick(r, c, e);
             }
           };
@@ -735,7 +756,7 @@
       const trayEl = document.getElementById('trayPieces');
       trayEl.innerHTML = '';
 
-      const p = getPlayerInfo(turn);
+      const p = players[turn];
       document.getElementById('trayTitle').textContent = `${p.name} の手札`;
 
       SIZES.forEach(size => {
@@ -754,7 +775,7 @@
         }
 
         card.onclick = () => {
-          if (gameOver || isBotThinking || (isBotMode && turn === 1)) return;
+          if (gameOver || isBotThinking || players[turn].isBot) return;
           initAudio();
 
           relocatingPiece = null;
@@ -810,8 +831,9 @@
         return;
       }
 
-      if (isBotThinking) {
-        bar.textContent = 'Botが思考中...';
+      const p = players[turn];
+      if (p.isBot || isBotThinking) {
+        bar.textContent = `${p.name} (Bot) が思考中...`;
         bar.className = 'instruction-bar bot-thinking';
         return;
       }
@@ -822,7 +844,6 @@
         return;
       }
 
-      const p = getPlayerInfo(turn);
       if (relocatingPiece) {
         bar.textContent = `緑色に光る空きマスの「${SIZE_NAMES[relocatingPiece.size]}」をタップ`;
         bar.className = 'instruction-bar relocating';
@@ -836,7 +857,7 @@
     }
 
     function handleRingClick(row, col, size) {
-      if (gameOver || isBotThinking) return;
+      if (gameOver || isBotThinking || players[turn].isBot) return;
       initAudio();
 
       const owner = board[row][col][size];
@@ -882,7 +903,7 @@
     }
 
     function handleCellClick(row, col, e) {
-      if (gameOver || isBotThinking) return;
+      if (gameOver || isBotThinking || players[turn].isBot) return;
       initAudio();
 
       if (relocatingPiece) {
@@ -973,11 +994,12 @@
       renderTray();
       updateInstruction();
 
-      if (!gameOver && isBotMode && turn === 1) {
+      if (!gameOver && players[turn].isBot) {
         triggerBotMove();
       }
     }
 
+    // --- 多人数対応 Bot思考ルーチン ---
     function triggerBotMove() {
       isBotThinking = true;
       updateInstruction();
@@ -988,15 +1010,15 @@
           return;
         }
 
-        const bestMove = calculateBestBotMove();
+        const bestMove = calculateBestBotMove(turn);
         if (bestMove) {
           if (bestMove.type === 'place') {
-            board[bestMove.r][bestMove.c][bestMove.size] = 1;
-            inventory[1][bestMove.size]--;
+            board[bestMove.r][bestMove.c][bestMove.size] = turn;
+            inventory[turn][bestMove.size]--;
             playSound('place');
           } else if (bestMove.type === 'relocate') {
             board[bestMove.fromR][bestMove.fromC][bestMove.size] = null;
-            board[bestMove.toR][bestMove.toC][bestMove.size] = 1;
+            board[bestMove.toR][bestMove.toC][bestMove.size] = turn;
             playSound('place');
           }
         }
@@ -1006,11 +1028,12 @@
       }, 650);
     }
 
-    function calculateBestBotMove() {
+    function calculateBestBotMove(botId) {
       const legalMoves = [];
 
+      // 1. 通常配置可能な手
       SIZES.forEach(size => {
-        if (inventory[1][size] > 0) {
+        if (inventory[botId][size] > 0) {
           for (let r = 0; r < 3; r++) {
             for (let c = 0; c < 3; c++) {
               if (board[r][c][size] === null) {
@@ -1021,12 +1044,13 @@
         }
       });
 
+      // 2. 使い切りサイズの移動可能手
       SIZES.forEach(size => {
-        if (inventory[1][size] === 0) {
+        if (inventory[botId][size] === 0) {
           const myPieces = [];
           for (let r = 0; r < 3; r++) {
             for (let c = 0; c < 3; c++) {
-              if (board[r][c][size] === 1) myPieces.push({ r, c });
+              if (board[r][c][size] === botId) myPieces.push({ r, c });
             }
           }
           myPieces.forEach(from => {
@@ -1043,39 +1067,46 @@
 
       if (legalMoves.length === 0) return null;
 
+      // 優先度1: 自身の即勝利
       for (let m of legalMoves) {
-        applySimulatedMove(m, 1);
+        applySimulatedMove(m, botId);
         const win = checkWin();
-        revertSimulatedMove(m, 1);
-        if (win && win.winner === 1) return m;
+        revertSimulatedMove(m, botId);
+        if (win && win.winner === botId) return m;
       }
 
-      const playerWinMoves = [];
-      SIZES.forEach(size => {
-        for (let r = 0; r < 3; r++) {
-          for (let c = 0; c < 3; c++) {
-            if (board[r][c][size] === null) {
-              board[r][c][size] = 0;
-              const win = checkWin();
-              board[r][c][size] = null;
-              if (win && win.winner === 0) {
-                playerWinMoves.push({ r, c, size });
+      // 優先度2: 他プレイヤーの即勝利を阻止
+      for (let otherId = 0; otherId < playerCount; otherId++) {
+        if (otherId === botId) continue;
+
+        const rivalWinSlots = [];
+        SIZES.forEach(size => {
+          for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 3; c++) {
+              if (board[r][c][size] === null) {
+                board[r][c][size] = otherId;
+                const win = checkWin();
+                board[r][c][size] = null;
+                if (win && win.winner === otherId) {
+                  rivalWinSlots.push({ r, c, size });
+                }
               }
             }
           }
-        }
-      });
-
-      if (playerWinMoves.length > 0) {
-        const target = playerWinMoves[0];
-        const blockMove = legalMoves.find(m => {
-          if (m.type === 'place') return m.r === target.r && m.c === target.c && m.size === target.size;
-          if (m.type === 'relocate') return m.toR === target.r && m.toC === target.c && m.size === target.size;
-          return false;
         });
-        if (blockMove) return blockMove;
+
+        if (rivalWinSlots.length > 0) {
+          const target = rivalWinSlots[0];
+          const blockMove = legalMoves.find(m => {
+            if (m.type === 'place') return m.r === target.r && m.c === target.c && m.size === target.size;
+            if (m.type === 'relocate') return m.toR === target.r && m.toC === target.c && m.size === target.size;
+            return false;
+          });
+          if (blockMove) return blockMove;
+        }
       }
 
+      // 優先度3: スコアリング配置
       let bestMove = legalMoves[0];
       let maxScore = -9999;
 
@@ -1241,8 +1272,8 @@
       }
 
       setTimeout(() => {
-        const winner = getPlayerInfo(result.winner);
-        document.getElementById('winTitle').textContent = `OTRIO！ ${winner.name} の勝利！`;
+        const winner = players[result.winner];
+        document.getElementById('winTitle').textContent = `ISHIZTRIO！ ${winner.name} の勝利！`;
         document.getElementById('winTitle').style.color = winner.color;
         document.getElementById('winReason').textContent = `${result.type}: ${result.description}`;
         document.getElementById('winModal').classList.add('show');
