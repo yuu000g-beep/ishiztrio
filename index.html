@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Ishiztrio (イシズトリオ)</title>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <style>
+    :root {
+      --bg: #0c0e17;
+      --board-outer: #1c2237;
+      --cell-bg: #131726;
+      --cell-border: #323d60;
+
+      --groove-border: rgba(255, 255, 255, 0.22);
+      --groove-bg: rgba(0, 0, 0, 0.45);
+
+      --p0-color: #ff2a6d;
+      --p0-glow: rgba(255, 42, 109, 0.7);
+      --p1-color: #05d9e8;
+      --p1-glow: rgba(5, 217, 232, 0.7);
+      --p2-color: #00ff87;
+      --p2-glow: rgba(0, 255, 135, 0.7);
+      --p3-color: #ffb800;
+      --p3-glow: rgba(255, 184, 0, 0.7);
+
+      --text-main: #ffffff;
+      --text-sub: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: manipulation;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      min-height: 100vh;
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
+      overflow: hidden;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 400px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      flex-grow: 1;
+    }
+
+    header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+
+    .title-area h1 {
+      font-size: 1.2rem;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      background: linear-gradient(135deg, #05d9e8, #ff2a6d);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .mode-select {
+      display: flex;
+      gap: 3px;
+      background: #192033;
+      padding: 2px;
+      border-radius: 8px;
+      border: 1px solid #2a3454;
+    }
+
+    .mode-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-sub);
+      padding: 3px 8px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mode-btn.active {
+      background: #34426d;
+      color: #fff;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .icon-btn {
+      background: #192033;
+      border: 1px solid #2a3454;
+      color: var(--text-main);
+      padding: 3px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    /* プレイヤー状況バー */
+    .players-bar {
+      display: grid;
+      gap: 5px;
+      width: 100%;
+      margin-bottom: 4px;
+    }
+
+    .player-card {
+      background: var(--cell-bg);
+      border: 2px solid #252b42;
+      border-radius: 8px;
+      padding: 4px 2px;
+      text-align: center;
+      transition: all 0.2s ease;
+      opacity: 0.45;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+    }
+
+    .player-card.active {
+      opacity: 1;
+      transform: translateY(-2px);
+    }
+
+    .player-card.p0.active { border-color: var(--p0-color); box-shadow: 0 0 10px var(--p0-glow); background: rgba(255, 42, 109, 0.12); }
+    .player-card.p1.active { border-color: var(--p1-color); box-shadow: 0 0 10px var(--p1-glow); background: rgba(5, 217, 232, 0.12); }
+    .player-card.p2.active { border-color: var(--p2-color); box-shadow: 0 0 10px var(--p2-glow); background: rgba(0, 255, 135, 0.12); }
+    .player-card.p3.active { border-color: var(--p3-color); box-shadow: 0 0 10px var(--p3-glow); background: rgba(255, 184, 0, 0.12); }
+
+    .p-name {
+      font-size: 0.72rem;
+      font-weight: 900;
+    }
+    .p0 .p-name { color: var(--p0-color); }
+    .p1 .p-name { color: var(--p1-color); }
+    .p2 .p-name { color: var(--p2-color); }
+    .p3 .p-name { color: var(--p3-color); }
+
+    .type-toggle-btn {
+      background: #1a2236;
+      border: 1px solid #36446b;
+      color: #cfd9ed;
+      font-size: 0.6rem;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .type-toggle-btn.is-bot {
+      background: rgba(5, 217, 232, 0.2);
+      border-color: #05d9e8;
+      color: #6ef1fc;
+    }
+
+    .p-count {
+      font-size: 0.64rem;
+      font-weight: 600;
+      color: #b5c3d8;
+    }
+
+    /* 指示バー */
+    .instruction-bar {
+      width: 100%;
+      background: #14192b;
+      border: 1px solid #283354;
+      padding: 5px 8px;
+      border-radius: 8px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 4px;
+      color: #b7c7e6;
+      min-height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.2;
+    }
+
+    .instruction-bar.relocating {
+      background: rgba(255, 184, 0, 0.18);
+      border-color: #ffb800;
+      color: #ffd54f;
+    }
+
+    .instruction-bar.bot-thinking {
+      background: rgba(5, 217, 232, 0.18);
+      border-color: #05d9e8;
+      color: #79f2fc;
+      animation: pulseThinking 1s infinite alternate;
+    }
+
+    @keyframes pulseThinking {
+      0% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+
+    .instruction-bar.error-msg {
+      background: rgba(255, 42, 109, 0.18);
+      border-color: #ff2a6d;
+      color: #ff80a4;
+    }
+
+    /* 盤面 */
+    .board-container {
+      width: 100%;
+      max-width: 345px;
+      aspect-ratio: 1;
+      background: linear-gradient(145deg, var(--board-outer), #101420);
+      border: 2px solid #2f3a5e;
+      border-radius: 16px;
+      padding: 8px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.8);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 6px;
+      position: relative;
+    }
+
+    .cell {
+      background: radial-gradient(circle, #1a2033 0%, var(--cell-bg) 80%);
+      border-radius: 12px;
+      border: 1.5px solid var(--cell-border);
+      position: relative;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);
+      transition: all 0.15s ease;
+    }
+
+    .cell:active {
+      transform: scale(0.96);
+    }
+
+    .cell.valid-target {
+      border-color: #00e676;
+      box-shadow: 0 0 10px rgba(0, 230, 118, 0.4);
+      animation: targetPulse 1.2s infinite alternate;
+    }
+
+    @keyframes targetPulse {
+      0% { background: radial-gradient(circle, #1b3831 0%, var(--cell-bg) 80%); }
+      100% { background: radial-gradient(circle, #245749 0%, var(--cell-bg) 80%); }
+    }
+
+    .slot-groove {
+      position: absolute;
+      border-radius: 50%;
+      border: 1.5px dashed var(--groove-border);
+      background: var(--groove-bg);
+      pointer-events: none;
+    }
+    .slot-groove.large { width: 84%; height: 84%; }
+    .slot-groove.medium { width: 56%; height: 56%; }
+    .slot-groove.small { width: 28%; height: 28%; }
+
+    /* リング */
+    .ring {
+      position: absolute;
+      border-radius: 50%;
+      box-sizing: border-box;
+      pointer-events: auto;
+      z-index: 5;
+      transition: transform 0.2s, filter 0.2s, opacity 0.2s;
+    }
+
+    .ring.large {
+      width: 84%;
+      height: 84%;
+      border-width: 6px;
+      border-style: solid;
+    }
+
+    .ring.medium {
+      width: 56%;
+      height: 56%;
+      border-width: 5px;
+      border-style: solid;
+    }
+
+    .ring.small {
+      width: 28%;
+      height: 28%;
+      border-width: 4px;
+      border-style: solid;
+    }
+
+    .ring.p0 { border-color: var(--p0-color); box-shadow: 0 0 8px var(--p0-glow); }
+    .ring.p1 { border-color: var(--p1-color); box-shadow: 0 0 8px var(--p1-glow); }
+    .ring.p2 { border-color: var(--p2-color); box-shadow: 0 0 8px var(--p2-glow); }
+    .ring.p3 { border-color: var(--p3-color); box-shadow: 0 0 8px var(--p3-glow); }
+
+    .ring.focus-target {
+      animation: focusBeat 0.8s infinite alternate !important;
+      filter: brightness(2) drop-shadow(0 0 12px currentColor) !important;
+      z-index: 20;
+    }
+
+    @keyframes focusBeat {
+      0% { transform: scale(1.02); }
+      100% { transform: scale(1.2); }
+    }
+
+    .ring.dimmed {
+      opacity: 0.15;
+      filter: grayscale(0.8);
+      pointer-events: none;
+    }
+
+    .ring.selected-for-move {
+      animation: movePulse 0.7s infinite alternate;
+      border-style: dashed;
+      filter: brightness(2);
+      z-index: 25;
+    }
+
+    @keyframes movePulse {
+      0% { transform: scale(1.06); }
+      100% { transform: scale(1.22); }
+    }
+
+    .ring.winning {
+      animation: winGlow 0.7s infinite alternate;
+      z-index: 30;
+    }
+    @keyframes winGlow {
+      0% { filter: brightness(1.2) drop-shadow(0 0 6px currentColor); transform: scale(1.05); }
+      100% { filter: brightness(2) drop-shadow(0 0 16px currentColor); transform: scale(1.15); }
+    }
+
+    /* 手持ちトレイ */
+    .tray-container {
+      width: 100%;
+      max-width: 345px;
+      background: #151929;
+      border: 1.5px solid #2a3454;
+      border-radius: 14px;
+      padding: 6px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .tray-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #9cb0ce;
+    }
+
+    .tray-pieces {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .piece-card {
+      background: #111422;
+      border: 2px solid #232b42;
+      border-radius: 10px;
+      padding: 6px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.15s ease;
+    }
+
+    .piece-card:active {
+      transform: scale(0.96);
+    }
+
+    .piece-card.selected {
+      background: #20283f;
+      border-color: #ffffff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    .piece-card.exhausted {
+      border-color: #ffb800;
+      background: rgba(255, 184, 0, 0.08);
+    }
+
+    .badge-relocate {
+      position: absolute;
+      top: -6px;
+      background: #ffb800;
+      color: #000;
+      font-size: 0.56rem;
+      font-weight: 900;
+      padding: 1px 5px;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+
+    .piece-icon-wrap {
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .piece-qty {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    /* モーダル */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(8, 10, 16, 0.88);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: #181c2d;
+      border: 2px solid #334169;
+      border-radius: 16px;
+      max-width: 320px;
+      width: 100%;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+    }
+
+    .modal-title {
+      font-size: 1.4rem;
+      font-weight: 900;
+      margin-bottom: 6px;
+    }
+
+    .modal-desc {
+      font-size: 0.82rem;
+      color: #a7b7d4;
+      line-height: 1.4;
+      margin-bottom: 16px;
+    }
+
+    .btn-main {
+      background: linear-gradient(135deg, #05d9e8, #0077ff);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 800;
+      cursor: pointer;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <header>
+      <div class="title-area">
+        <h1>ISHIZTRIO</h1>
+      </div>
+      <div class="mode-select">
+        <button class="mode-btn active" data-count="2" onclick="setPlayerCount(2)">2人</button>
+        <button class="mode-btn" data-count="3" onclick="setPlayerCount(3)">3人</button>
+        <button class="mode-btn" data-count="4" onclick="setPlayerCount(4)">4人</button>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" onclick="resetGame()">リセット</button>
+      </div>
+    </header>
+
+    <div class="players-bar" id="playersBar"></div>
+
+    <div class="instruction-bar" id="instructionBar">
+      サイズを選んで配置してください
+    </div>
+
+    <div class="board-container" id="board"></div>
+
+    <div class="tray-container">
+      <div class="tray-header">
+        <span id="trayTitle">手持ちコマ</span>
+        <span id="cancelMoveBtn" style="display:none; color:#ffb800; cursor:pointer;" onclick="cancelRelocate()">✕ 解除</span>
+      </div>
+      <div class="tray-pieces" id="trayPieces"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="winModal">
+    <div class="modal-card">
+      <div class="modal-title" id="winTitle">ISHIZTRIO！</div>
+      <div class="modal-desc" id="winReason">勝利条件達成！</div>
+      <button class="btn-main" onclick="resetGame(); closeModal();">もう一度遊ぶ</button>
+    </div>
+  </div>
+
+  <script>
+    const SIZES = ['small', 'medium', 'large'];
+    const SIZE_NAMES = { small: '小', medium: '中', large: '大' };
+    const PLAYER_DEFAULTS = [
+      { id: 0, name: '赤 (P1)', color: '#ff2a6d', isBot: false },
+      { id: 1, name: '青 (P2)', color: '#05d9e8', isBot: true },
+      { id: 2, name: '緑 (P3)', color: '#00ff87', isBot: true },
+      { id: 3, name: '黄 (P4)', color: '#ffb800', isBot: true }
+    ];
+
+    let playerCount = 2;
+    let players = JSON.parse(JSON.stringify(PLAYER_DEFAULTS));
+
+    let turn = 0;
+    let selectedSize = null;
+    let relocatingPiece = null;
+    let gameOver = false;
+    let isBotThinking = false;
+    let tempMessage = null;
+
+    let board = [];
+    let inventory = [];
+
+    let audioStarted = false;
+    let synth = null;
+
+    function initAudio() {
+      if (!audioStarted && window.Tone) {
+        Tone.start();
+        synth = new Tone.PolySynth(Tone.Synth, {
+          oscillator: { type: 'triangle' },
+          envelope: { attack: 0.005, decay: 0.1, sustain: 0.05, release: 0.1 }
+        }).toDestination();
+        audioStarted = true;
+      }
+    }
+
+    function playSound(type) {
+      if (!synth) return;
+      try {
+        const now = Tone.now();
+        if (type === 'select') synth.triggerAttackRelease('C5', '0.05', now);
+        else if (type === 'place') synth.triggerAttackRelease('E5', '0.08', now);
+        else if (type === 'pick') synth.triggerAttackRelease('G4', '0.06', now);
+        else if (type === 'error') synth.triggerAttackRelease('B2', '0.1', now);
+        else if (type === 'win') {
+          ['C5', 'E5', 'G5', 'C6'].forEach((n, i) => synth.triggerAttackRelease(n, '0.25', now + i * 0.08));
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function initGame() {
+      gameOver = false;
+      isBotThinking = false;
+      turn = 0;
+      selectedSize = null;
+      relocatingPiece = null;
+      tempMessage = null;
+
+      board = [];
+      for (let r = 0; r < 3; r++) {
+        board[r] = [];
+        for (let c = 0; c < 3; c++) {
+          board[r][c] = { small: null, medium: null, large: null };
+        }
+      }
+
+      inventory = [];
+      for (let p = 0; p < playerCount; p++) {
+        inventory[p] = { small: 3, medium: 3, large: 3 };
+      }
+
+      autoSelectFirstAvailable();
+      renderBoard();
+      renderPlayersBar();
+      renderTray();
+      updateInstruction();
+
+      if (players[turn].isBot) {
+        triggerBotMove();
+      }
+    }
+
+    function setPlayerCount(count) {
+      playerCount = count;
+      document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.count) === count);
+      });
+      resetGame();
+    }
+
+    function togglePlayerType(idx, e) {
+      e.stopPropagation();
+      players[idx].isBot = !players[idx].isBot;
+      renderPlayersBar();
+      updateInstruction();
+
+      if (!gameOver && turn === idx && players[idx].isBot && !isBotThinking) {
+        triggerBotMove();
+      }
+    }
+
+    function resetGame() {
+      initGame();
+    }
+
+    function autoSelectFirstAvailable() {
+      relocatingPiece = null;
+      for (let s of SIZES) {
+        if (inventory[turn][s] > 0) {
+          selectedSize = s;
+          return;
+        }
+      }
+      selectedSize = SIZES[0];
+    }
+
+    function renderPlayersBar() {
+      const container = document.getElementById('playersBar');
+      container.innerHTML = '';
+      container.style.gridTemplateColumns = `repeat(${playerCount}, 1fr)`;
+
+      for (let i = 0; i < playerCount; i++) {
+        const p = players[i];
+        const card = document.createElement('div');
+        card.className = `player-card p${i} ${i === turn ? 'active' : ''}`;
+        
+        const totalRemaining = SIZES.reduce((sum, s) => sum + inventory[i][s], 0);
+
+        card.innerHTML = `
+          <div class="p-name">${p.name}</div>
+          <button class="type-toggle-btn ${p.isBot ? 'is-bot' : ''}" onclick="togglePlayerType(${i}, event)">
+            ${p.isBot ? '🤖 Bot' : '👤 人間'}
+          </button>
+          <div class="p-count">残: ${totalRemaining}</div>
+        `;
+        container.appendChild(card);
+      }
+    }
+
+    function renderBoard() {
+      const boardEl = document.getElementById('board');
+      boardEl.innerHTML = '';
+
+      const isCurrentHuman = !players[turn].isBot;
+      const isExhaustedMode = isCurrentHuman && selectedSize && (inventory[turn][selectedSize] === 0) && !relocatingPiece;
+
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+
+          if (isCurrentHuman && relocatingPiece && board[r][c][relocatingPiece.size] === null) {
+            cell.classList.add('valid-target');
+          }
+
+          SIZES.forEach(size => {
+            const groove = document.createElement('div');
+            groove.className = `slot-groove ${size}`;
+            cell.appendChild(groove);
+          });
+
+          SIZES.forEach(size => {
+            const owner = board[r][c][size];
+            if (owner !== null) {
+              const ring = document.createElement('div');
+              ring.className = `ring ${size} p${owner}`;
+              ring.dataset.size = size;
+
+              if (isExhaustedMode) {
+                if (owner === turn && size === selectedSize) {
+                  ring.classList.add('focus-target');
+                } else {
+                  ring.classList.add('dimmed');
+                }
+              }
+
+              if (relocatingPiece && relocatingPiece.row === r && relocatingPiece.col === c && relocatingPiece.size === size) {
+                ring.classList.add('selected-for-move');
+              }
+
+              ring.onclick = (e) => {
+                e.stopPropagation();
+                if (isCurrentHuman && !isBotThinking) {
+                  handleRingClick(r, c, size);
+                }
+              };
+
+              cell.appendChild(ring);
+            }
+          });
+
+          cell.onclick = (e) => {
+            if (isCurrentHuman && !isBotThinking) {
+              handleCellClick(r, c, e);
+            }
+          };
+
+          boardEl.appendChild(cell);
+        }
+      }
+    }
+
+    function renderTray() {
+      const trayEl = document.getElementById('trayPieces');
+      trayEl.innerHTML = '';
+
+      const p = players[turn];
+      document.getElementById('trayTitle').textContent = `${p.name} の手札`;
+
+      SIZES.forEach(size => {
+        const qty = inventory[turn][size];
+        const isExhausted = (qty === 0);
+        const card = document.createElement('div');
+        const isSelected = selectedSize === size;
+        
+        card.className = `piece-card ${isSelected ? 'selected' : ''} ${isExhausted ? 'exhausted' : ''}`;
+        
+        if (isExhausted) {
+          const badge = document.createElement('div');
+          badge.className = 'badge-relocate';
+          badge.textContent = '盤面移動可';
+          card.appendChild(badge);
+        }
+
+        card.onclick = () => {
+          if (gameOver || isBotThinking || players[turn].isBot) return;
+          initAudio();
+
+          relocatingPiece = null;
+          selectedSize = size;
+          playSound('select');
+
+          if (isExhausted) {
+            tempMessage = `盤面で光っている自色の「${SIZE_NAMES[size]}」をタップ`;
+          } else {
+            tempMessage = null;
+          }
+
+          renderTray();
+          renderBoard();
+          updateInstruction();
+        };
+
+        const iconWrap = document.createElement('div');
+        iconWrap.className = 'piece-icon-wrap';
+
+        const ring = document.createElement('div');
+        ring.className = `ring ${size} p${turn}`;
+        iconWrap.appendChild(ring);
+
+        const label = document.createElement('div');
+        label.className = 'piece-qty';
+        label.textContent = `${SIZE_NAMES[size]}: ${qty}個`;
+
+        card.appendChild(iconWrap);
+        card.appendChild(label);
+        trayEl.appendChild(card);
+      });
+
+      document.getElementById('cancelMoveBtn').style.display = (relocatingPiece || (selectedSize && inventory[turn][selectedSize] === 0)) ? 'inline' : 'none';
+    }
+
+    function flashInstruction(msg) {
+      tempMessage = msg;
+      updateInstruction();
+      setTimeout(() => {
+        if (tempMessage === msg) {
+          tempMessage = null;
+          updateInstruction();
+        }
+      }, 3000);
+    }
+
+    function updateInstruction() {
+      const bar = document.getElementById('instructionBar');
+      if (gameOver) {
+        bar.textContent = 'ゲーム終了！リセットで新規対戦';
+        bar.className = 'instruction-bar';
+        return;
+      }
+
+      const p = players[turn];
+      if (p.isBot || isBotThinking) {
+        bar.textContent = `${p.name} (Bot) が思考中...`;
+        bar.className = 'instruction-bar bot-thinking';
+        return;
+      }
+
+      if (tempMessage) {
+        bar.textContent = tempMessage;
+        bar.className = 'instruction-bar relocating';
+        return;
+      }
+
+      if (relocatingPiece) {
+        bar.textContent = `緑色に光る空きマスの「${SIZE_NAMES[relocatingPiece.size]}」をタップ`;
+        bar.className = 'instruction-bar relocating';
+      } else if (selectedSize && inventory[turn][selectedSize] === 0) {
+        bar.textContent = `点滅している「${SIZE_NAMES[selectedSize]}」の自ゴマをタップ`;
+        bar.className = 'instruction-bar relocating';
+      } else if (selectedSize && inventory[turn][selectedSize] > 0) {
+        bar.textContent = `${p.name}：サイズ「${SIZE_NAMES[selectedSize]}」を配置`;
+        bar.className = 'instruction-bar';
+      }
+    }
+
+    function handleRingClick(row, col, size) {
+      if (gameOver || isBotThinking || players[turn].isBot) return;
+      initAudio();
+
+      const owner = board[row][col][size];
+      if (owner !== turn) {
+        playSound('error');
+        flashInstruction('相手のコマは移動できません');
+        return;
+      }
+
+      if (inventory[turn][size] > 0) {
+        playSound('error');
+        flashInstruction(`「${SIZE_NAMES[size]}」は手札を使い切ると移動できます`);
+        return;
+      }
+
+      if (selectedSize && inventory[turn][selectedSize] === 0 && selectedSize !== size) {
+        playSound('error');
+        flashInstruction(`光っている「${SIZE_NAMES[selectedSize]}」をタップしてください`);
+        return;
+      }
+
+      if (relocatingPiece && relocatingPiece.row === row && relocatingPiece.col === col && relocatingPiece.size === size) {
+        cancelRelocate();
+        return;
+      }
+
+      relocatingPiece = { row, col, size };
+      selectedSize = size;
+      tempMessage = null;
+      playSound('pick');
+      renderBoard();
+      renderTray();
+      updateInstruction();
+    }
+
+    function cancelRelocate() {
+      relocatingPiece = null;
+      tempMessage = null;
+      autoSelectFirstAvailable();
+      renderBoard();
+      renderTray();
+      updateInstruction();
+    }
+
+    function handleCellClick(row, col, e) {
+      if (gameOver || isBotThinking || players[turn].isBot) return;
+      initAudio();
+
+      if (relocatingPiece) {
+        const size = relocatingPiece.size;
+
+        if (relocatingPiece.row === row && relocatingPiece.col === col) {
+          cancelRelocate();
+          return;
+        }
+
+        if (board[row][col][size] !== null) {
+          playSound('error');
+          flashInstruction(`このマスの「${SIZE_NAMES[size]}」は埋まっています`);
+          return;
+        }
+
+        board[relocatingPiece.row][relocatingPiece.col][size] = null;
+        board[row][col][size] = turn;
+        playSound('place');
+
+        const moveFinished = finishTurnAfterAction();
+        if (!moveFinished) {
+          relocatingPiece = null;
+        }
+        return;
+      }
+
+      if (selectedSize && inventory[turn][selectedSize] === 0) {
+        if (board[row][col][selectedSize] === turn) {
+          handleRingClick(row, col, selectedSize);
+          return;
+        }
+        playSound('error');
+        flashInstruction(`先に点滅している「${SIZE_NAMES[selectedSize]}」の自ゴマをタップ`);
+        return;
+      }
+
+      if (!selectedSize || inventory[turn][selectedSize] <= 0) {
+        playSound('error');
+        flashInstruction('手札のサイズを選んでください');
+        return;
+      }
+
+      if (board[row][col][selectedSize] !== null) {
+        playSound('error');
+        flashInstruction(`このマスの「${SIZE_NAMES[selectedSize]}」は埋まっています`);
+        return;
+      }
+
+      board[row][col][selectedSize] = turn;
+      inventory[turn][selectedSize]--;
+      playSound('place');
+
+      finishTurnAfterAction();
+    }
+
+    function finishTurnAfterAction() {
+      relocatingPiece = null;
+      tempMessage = null;
+
+      const winResult = checkWin();
+      if (winResult) {
+        handleWin(winResult);
+        return true;
+      }
+
+      nextTurn();
+      return false;
+    }
+
+    function nextTurn() {
+      let attempts = 0;
+      do {
+        turn = (turn + 1) % playerCount;
+        attempts++;
+
+        const hasPiecesInInventory = SIZES.some(s => inventory[turn][s] > 0);
+        const hasPiecesOnBoard = countPiecesOnBoard(turn) > 0;
+
+        if (hasPiecesInInventory || hasPiecesOnBoard) {
+          break;
+        }
+      } while (attempts < playerCount);
+
+      autoSelectFirstAvailable();
+      renderBoard();
+      renderPlayersBar();
+      renderTray();
+      updateInstruction();
+
+      if (!gameOver && players[turn].isBot) {
+        triggerBotMove();
+      }
+    }
+
+    // --- 多人数対応 Bot思考ルーチン ---
+    function triggerBotMove() {
+      isBotThinking = true;
+      updateInstruction();
+
+      setTimeout(() => {
+        if (gameOver) {
+          isBotThinking = false;
+          return;
+        }
+
+        const bestMove = calculateBestBotMove(turn);
+        if (bestMove) {
+          if (bestMove.type === 'place') {
+            board[bestMove.r][bestMove.c][bestMove.size] = turn;
+            inventory[turn][bestMove.size]--;
+            playSound('place');
+          } else if (bestMove.type === 'relocate') {
+            board[bestMove.fromR][bestMove.fromC][bestMove.size] = null;
+            board[bestMove.toR][bestMove.toC][bestMove.size] = turn;
+            playSound('place');
+          }
+        }
+
+        isBotThinking = false;
+        finishTurnAfterAction();
+      }, 650);
+    }
+
+    function calculateBestBotMove(botId) {
+      const legalMoves = [];
+
+      // 1. 通常配置可能な手
+      SIZES.forEach(size => {
+        if (inventory[botId][size] > 0) {
+          for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 3; c++) {
+              if (board[r][c][size] === null) {
+                legalMoves.push({ type: 'place', size, r, c });
+              }
+            }
+          }
+        }
+      });
+
+      // 2. 使い切りサイズの移動可能手
+      SIZES.forEach(size => {
+        if (inventory[botId][size] === 0) {
+          const myPieces = [];
+          for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 3; c++) {
+              if (board[r][c][size] === botId) myPieces.push({ r, c });
+            }
+          }
+          myPieces.forEach(from => {
+            for (let toR = 0; toR < 3; toR++) {
+              for (let toC = 0; toC < 3; toC++) {
+                if (board[toR][toC][size] === null && !(from.r === toR && from.c === toC)) {
+                  legalMoves.push({ type: 'relocate', size, fromR: from.r, fromC: from.c, toR, toC });
+                }
+              }
+            }
+          });
+        }
+      });
+
+      if (legalMoves.length === 0) return null;
+
+      // 優先度1: 自身の即勝利
+      for (let m of legalMoves) {
+        applySimulatedMove(m, botId);
+        const win = checkWin();
+        revertSimulatedMove(m, botId);
+        if (win && win.winner === botId) return m;
+      }
+
+      // 優先度2: 他プレイヤーの即勝利を阻止
+      for (let otherId = 0; otherId < playerCount; otherId++) {
+        if (otherId === botId) continue;
+
+        const rivalWinSlots = [];
+        SIZES.forEach(size => {
+          for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 3; c++) {
+              if (board[r][c][size] === null) {
+                board[r][c][size] = otherId;
+                const win = checkWin();
+                board[r][c][size] = null;
+                if (win && win.winner === otherId) {
+                  rivalWinSlots.push({ r, c, size });
+                }
+              }
+            }
+          }
+        });
+
+        if (rivalWinSlots.length > 0) {
+          const target = rivalWinSlots[0];
+          const blockMove = legalMoves.find(m => {
+            if (m.type === 'place') return m.r === target.r && m.c === target.c && m.size === target.size;
+            if (m.type === 'relocate') return m.toR === target.r && m.toC === target.c && m.size === target.size;
+            return false;
+          });
+          if (blockMove) return blockMove;
+        }
+      }
+
+      // 優先度3: スコアリング配置
+      let bestMove = legalMoves[0];
+      let maxScore = -9999;
+
+      for (let m of legalMoves) {
+        let score = 0;
+        const targetR = m.type === 'place' ? m.r : m.toR;
+        const targetC = m.type === 'place' ? m.c : m.toC;
+
+        if (targetR === 1 && targetC === 1) score += 35;
+        else if ((targetR === 0 || targetR === 2) && (targetC === 0 || targetC === 2)) score += 15;
+
+        if (m.size === 'large') score += 10;
+        if (m.size === 'medium') score += 8;
+
+        score += Math.floor(Math.random() * 8);
+
+        if (score > maxScore) {
+          maxScore = score;
+          bestMove = m;
+        }
+      }
+
+      return bestMove;
+    }
+
+    function applySimulatedMove(m, playerId) {
+      if (m.type === 'place') {
+        board[m.r][m.c][m.size] = playerId;
+      } else {
+        board[m.fromR][m.fromC][m.size] = null;
+        board[m.toR][m.toC][m.size] = playerId;
+      }
+    }
+
+    function revertSimulatedMove(m, playerId) {
+      if (m.type === 'place') {
+        board[m.r][m.c][m.size] = null;
+      } else {
+        board[m.toR][m.toC][m.size] = null;
+        board[m.fromR][m.fromC][m.size] = playerId;
+      }
+    }
+
+    function countPiecesOnBoard(playerId) {
+      let count = 0;
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          SIZES.forEach(s => {
+            if (board[r][c][s] === playerId) count++;
+          });
+        }
+      }
+      return count;
+    }
+
+    function checkWin() {
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          const owner = board[r][c].small;
+          if (owner !== null && owner === board[r][c].medium && owner === board[r][c].large) {
+            return {
+              winner: owner,
+              type: '同心円（コンセントリック）',
+              description: `1つのマスに大・中・小をすべて揃えました！`,
+              winningRings: [
+                { r, c, size: 'small' },
+                { r, c, size: 'medium' },
+                { r, c, size: 'large' }
+              ]
+            };
+          }
+        }
+      }
+
+      const lines = [
+        [[0,0],[0,1],[0,2]],
+        [[1,0],[1,1],[1,2]],
+        [[2,0],[2,1],[2,2]],
+        [[0,0],[1,0],[2,0]],
+        [[0,1],[1,1],[2,1]],
+        [[0,2],[1,2],[2,2]],
+        [[0,0],[1,1],[2,2]],
+        [[0,2],[1,1],[2,0]]
+      ];
+
+      for (let line of lines) {
+        for (let size of SIZES) {
+          const p0 = board[line[0][0]][line[0][1]][size];
+          const p1 = board[line[1][0]][line[1][1]][size];
+          const p2 = board[line[2][0]][line[2][1]][size];
+
+          if (p0 !== null && p0 === p1 && p1 === p2) {
+            return {
+              winner: p0,
+              type: '同サイズ一列',
+              description: `${SIZE_NAMES[size]}サイズを一直線に3つ揃えました！`,
+              winningRings: [
+                { r: line[0][0], c: line[0][1], size },
+                { r: line[1][0], c: line[1][1], size },
+                { r: line[2][0], c: line[2][1], size }
+              ]
+            };
+          }
+        }
+      }
+
+      for (let line of lines) {
+        const a0 = board[line[0][0]][line[0][1]].small;
+        const a1 = board[line[1][0]][line[1][1]].medium;
+        const a2 = board[line[2][0]][line[2][1]].large;
+        if (a0 !== null && a0 === a1 && a1 === a2) {
+          return {
+            winner: a0,
+            type: 'シークエンス一列',
+            description: `小・中・大を順番通り一直線に揃えました！`,
+            winningRings: [
+              { r: line[0][0], c: line[0][1], size: 'small' },
+              { r: line[1][0], c: line[1][1], size: 'medium' },
+              { r: line[2][0], c: line[2][1], size: 'large' }
+            ]
+          };
+        }
+
+        const b0 = board[line[0][0]][line[0][1]].large;
+        const b1 = board[line[1][0]][line[1][1]].medium;
+        const b2 = board[line[2][0]][line[2][1]].small;
+        if (b0 !== null && b0 === b1 && b1 === b2) {
+          return {
+            winner: b0,
+            type: 'シークエンス一列',
+            description: `大・中・小を順番通り一直線に揃えました！`,
+            winningRings: [
+              { r: line[0][0], c: line[0][1], size: 'large' },
+              { r: line[1][0], c: line[1][1], size: 'medium' },
+              { r: line[2][0], c: line[2][1], size: 'small' }
+            ]
+          };
+        }
+      }
+
+      return null;
+    }
+
+    function handleWin(result) {
+      gameOver = true;
+      playSound('win');
+
+      renderBoard();
+      result.winningRings.forEach(item => {
+        const cell = document.querySelector(`.cell[data-row="${item.r}"][data-col="${item.c}"]`);
+        if (cell) {
+          const ring = cell.querySelector(`.ring.${item.size}`);
+          if (ring) ring.classList.add('winning');
+        }
+      });
+
+      if (window.confetti) {
+        confetti({
+          particleCount: 100,
+          spread: 80,
+          origin: { y: 0.6 }
+        });
+      }
+
+      setTimeout(() => {
+        const winner = players[result.winner];
+        document.getElementById('winTitle').textContent = `ISHIZTRIO！ ${winner.name} の勝利！`;
+        document.getElementById('winTitle').style.color = winner.color;
+        document.getElementById('winReason').textContent = `${result.type}: ${result.description}`;
+        document.getElementById('winModal').classList.add('show');
+      }, 700);
+
+      updateInstruction();
+    }
+
+    function closeModal() {
+      document.getElementById('winModal').classList.remove('show');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initGame();
+    });
+  </script>
+</body>
+</html>
